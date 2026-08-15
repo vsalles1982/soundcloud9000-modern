@@ -1,0 +1,29 @@
+PATH
+  remote: .
+  specs:
+    soundcloud9000 (0.2.0.pre1)
+      curses (>= 1.4, < 2)
+      logger (>= 1.6, < 2)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    curses (1.6.0)
+    logger (1.7.0)
+    mocha (2.8.2)
+      ruby2_keywords (>= 0.0.5)
+    rake (13.4.2)
+    ruby2_keywords (0.0.5)
+
+PLATFORMS
+  ruby
+  x86_64-linux
+
+DEPENDENCIES
+  bundler (>= 2.7, < 5)
+  mocha (~> 2.0)
+  rake (~> 13.0)
+  soundcloud9000!
+
+BUNDLED WITH
+   2.7.2

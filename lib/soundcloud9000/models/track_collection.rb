@@ -1,0 +1,120 @@
+require_relative 'collection'
+require_relative 'track'
+require_relative 'playlist'
+
+module Soundcloud9000
+  module Models
+    class TrackCollection < Collection
+      DEFAULT_LIMIT = 50
+
+      attr_reader :limit
+      attr_accessor :collection_to_load, :user, :playlist, :shuffle, :help
+
+      def initialize(client)
+        super
+        @limit = DEFAULT_LIMIT
+        @collection_to_load = :recent
+        @shuffle = false
+        @help = false
+      end
+
+      def size
+        @rows.size
+      end
+
+      def clear_and_replace
+        clear
+        load_more
+        events.trigger(:replace)
+      end
+
+      def load
+        clear
+        load_more
+      end
+
+      def load_more
+        return if @loaded
+
+        tracks = send("#{@collection_to_load}_tracks")
+        @loaded = true if tracks.empty?
+
+        append(tracks.map { |hash| Track.new(hash) })
+        @page += 1
+      end
+
+      def favorites_tracks
+        return [] if @client.current_user.nil?
+
+        response = @client.get(
+          "/users/#{@client.current_user.id}/track_likes",
+          offset: @limit * @page,
+          limit: @limit,
+          linked_partitioning: 1
+        )
+
+        extract_tracks(response)
+      end
+
+      def recent_tracks
+        response = @client.get(
+          '/search/tracks',
+          q: 'electronic',
+          offset: @page * limit,
+          limit: @limit,
+          linked_partitioning: 1
+        )
+
+        extract_tracks(response)
+      end
+
+      def user_tracks
+        return [] if @client.current_user.nil?
+
+        response = @client.get(
+          "/users/#{@client.current_user.id}/tracks",
+          offset: @limit * @page,
+          limit: @limit,
+          linked_partitioning: 1
+        )
+
+        tracks = extract_tracks(response)
+
+        if tracks.empty?
+          UI::Input.error(
+            "'#{@client.current_user.username}' has not authored any tracks. " \
+            'Use f to switch to favorites, or s to switch to playlists.'
+          )
+          []
+        else
+          tracks
+        end
+      end
+
+      def playlist_tracks
+        return [] if @playlist.nil?
+
+        response = @client.get(
+          "/playlists/#{@playlist.id}/tracks",
+          offset: @limit * @page,
+          limit: @limit,
+          linked_partitioning: 1
+        )
+
+        extract_tracks(response)
+      end
+
+      private
+
+      def extract_tracks(response)
+        return response if response.is_a?(Array)
+
+        collection = response['collection'] || []
+
+        collection.filter_map do |item|
+          item['track'] || item
+        end
+      end
+    end
+  end
+end

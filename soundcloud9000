@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd "$PROJECT_DIR"
+
+exec bundle _2.7.2_ exec ruby \
+  -Ilib \
+  -rsoundcloud9000 \
+  -e 'Soundcloud9000.start' \
+  -- "$@"
