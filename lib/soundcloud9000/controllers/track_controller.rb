@@ -4,6 +4,7 @@ require_relative '../ui/table'
 require_relative '../ui/input'
 require_relative '../models/track_collection'
 require_relative '../models/user'
+require_relative '../models/playlist'
 
 module Soundcloud9000
   module Controllers
@@ -20,15 +21,7 @@ module Soundcloud9000
             events.trigger(:select, current_track)
 
           when :search
-            query = UI::Input.getstr(
-              'Search SoundCloud: '
-            ).to_s.strip
-
-            unless query.empty?
-              @tracks.query = query
-              @tracks.collection_to_load = :recent
-              @tracks.clear_and_replace
-            end
+            search_tracks
 
           when :up, :k
             @view.up
@@ -38,67 +31,16 @@ module Soundcloud9000
             @tracks.load_more if @view.bottom?
 
           when :u
-            user = fetch_user_with_message(
-              'Change to SoundCloud user: '
-            )
-
-            unless user.nil?
-              @client.current_user = user
-              @tracks.collection_to_load = :user
-              @tracks.clear_and_replace
-            end
+            load_user_tracks
 
           when :f
-            if @client.current_user.nil?
-              @client.current_user = fetch_user_with_message(
-                "Change to SoundCloud user's favourites: "
-              )
-            end
-
-            unless @client.current_user.nil?
-              @tracks.collection_to_load = :favorites
-              @tracks.clear_and_replace
-            end
+            load_favorites
 
           when :s
-            @view.clear
-
-            if @client.current_user.nil?
-              @client.current_user = fetch_user_with_message(
-                'Change to SoundCloud user: '
-              )
-            end
-
-            unless @client.current_user.nil?
-              playlist_name = UI::Input.getstr(
-                'Change to SoundCloud playlist: '
-              ).to_s.strip
-
-              playlist_path =
-                "#{@client.current_user.permalink}/sets/#{playlist_name}"
-
-              playlist_response = @client.resolve(playlist_path)
-
-              if playlist_response.nil?
-                UI::Input.error(
-                  "No such playlist '#{playlist_name}' for " \
-                  "#{@client.current_user.username}"
-                )
-              else
-                @tracks.playlist = Models::Playlist.new(
-                  playlist_response
-                )
-                @tracks.collection_to_load = :playlist
-                @tracks.clear_and_replace
-              end
-            end
+            load_playlist
 
           when :m
-            @tracks.shuffle = !@tracks.shuffle
-
-            UI::Input.message(
-              "Shuffle #{@tracks.shuffle ? 'enabled' : 'disabled'}."
-            )
+            toggle_shuffle
 
           when :h
             show_help
@@ -153,14 +95,191 @@ module Soundcloud9000
 
       private
 
-      def show_help
-        @tracks.help = !@tracks.help
+      def search_tracks
+        query = UI::Input.getstr(
+          'Search SoundCloud: '
+        ).to_s.strip
 
-        unless @tracks.help
-          @tracks.clear_and_replace
-          return
+        return if query.empty?
+
+        @tracks.query = query
+        @tracks.collection_to_load = :recent
+        @tracks.clear_and_replace
+      end
+
+      def load_user_tracks
+        user = fetch_user_with_message(
+          'Change to SoundCloud user: '
+        )
+
+        return if user.nil?
+
+        @client.current_user = user
+        @tracks.collection_to_load = :user
+        @tracks.clear_and_replace
+      end
+
+      def load_favorites
+        if @client.current_user.nil?
+          @client.current_user = fetch_user_with_message(
+            "Change to SoundCloud user's favourites: "
+          )
         end
 
+        return if @client.current_user.nil?
+
+        @tracks.collection_to_load = :favorites
+        @tracks.clear_and_replace
+      end
+
+      def load_playlist
+        if @client.current_user.nil?
+          @client.current_user = fetch_user_with_message(
+            'Change to SoundCloud user: '
+          )
+        end
+
+        return if @client.current_user.nil?
+
+        response = @client.get(
+          "/users/#{@client.current_user.id}/playlists_without_albums",
+          limit: 50,
+          linked_partitioning: 1
+        )
+
+        playlists =
+          if response.is_a?(Hash)
+            response['collection'] || []
+          else
+            response
+          end
+
+        selected_playlist = choose_playlist(playlists)
+        return if selected_playlist.nil?
+
+        @tracks.playlist = Models::Playlist.new(
+          selected_playlist
+        )
+
+        @tracks.collection_to_load = :playlist
+        @tracks.clear_and_replace
+      rescue RuntimeError => error
+        UI::Input.error(
+          "Could not load playlists: #{error.message}"
+        )
+      end
+
+      def toggle_shuffle
+        @tracks.shuffle = !@tracks.shuffle
+
+        UI::Input.message(
+          "Shuffle #{@tracks.shuffle ? 'enabled' : 'disabled'}."
+        )
+      end
+
+      def choose_playlist(playlists)
+        if playlists.empty?
+          UI::Input.error(
+            'No public playlists were found.'
+          )
+          return nil
+        end
+
+        selected = 0
+        visible_rows = [Curses.lines - 6, 15].min
+        height = visible_rows + 4
+        width = [Curses.cols - 4, 90].min
+        top = (Curses.lines - height) / 2
+        left = (Curses.cols - width) / 2
+
+        window = Curses::Window.new(
+          height,
+          width,
+          top,
+          left
+        )
+        window.keypad(true)
+
+        loop do
+          draw_playlist_menu(
+            window,
+            playlists,
+            selected,
+            visible_rows,
+            width
+          )
+
+          key = window.getch
+
+          case key
+          when Curses::KEY_UP, 'k'
+            selected -= 1 if selected.positive?
+
+          when Curses::KEY_DOWN, 'j'
+            if selected < playlists.length - 1
+              selected += 1
+            end
+
+          when Curses::KEY_ENTER,
+               Curses::KEY_CTRL_J,
+               10,
+               13
+            return playlists[selected]
+
+          when 27, 'q'
+            return nil
+          end
+        end
+      ensure
+        window&.close
+      end
+
+      def draw_playlist_menu(
+        window,
+        playlists,
+        selected,
+        visible_rows,
+        width
+      )
+        window.clear
+        window.box('|', '-')
+
+        window.setpos(1, 2)
+        window.addstr(
+          'Choose playlist — arrows + Enter'
+        )
+
+        offset =
+          if selected >= visible_rows
+            selected - visible_rows + 1
+          else
+            0
+          end
+
+        visible_playlists =
+          playlists.slice(offset, visible_rows) || []
+
+        visible_playlists.each_with_index do |playlist, row|
+          index = offset + row
+          title = playlist['title'].to_s
+          prefix = index == selected ? '> ' : '  '
+          text = "#{prefix}#{title}"[0, width - 4]
+
+          window.setpos(row + 3, 2)
+
+          if index == selected
+            window.attron(Curses::A_REVERSE) do
+              window.addstr(text)
+            end
+          else
+            window.addstr(text)
+          end
+        end
+
+        window.refresh
+      end
+
+      def show_help
         height = [Curses.lines - 2, 32].min
         width = [Curses.cols - 2, 84].min
         top = (Curses.lines - height) / 2
@@ -172,6 +291,7 @@ module Soundcloud9000
           top,
           left
         )
+        window.keypad(true)
 
         window.attrset(
           Curses.color_pair(4) |
@@ -192,10 +312,10 @@ module Soundcloud9000
 
           /           Search tracks, artists or genres
           u           Load tracks from a user
-          f           Return to the user's liked tracks
-          s           Open one of the user's playlists
+          f           Return to liked tracks
+          s           Choose one of the user's playlists
           m           Toggle shuffle mode
-          h           Open or close this help
+          h           Open this help
           Ctrl+C      Exit
         HELP
 
@@ -217,9 +337,8 @@ module Soundcloud9000
         window.box('|', '-')
         window.refresh
         window.getch
-        window.close
-
-        @tracks.help = false
+      ensure
+        window&.close
         @tracks.clear_and_replace
       end
     end

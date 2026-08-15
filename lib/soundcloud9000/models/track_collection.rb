@@ -8,14 +8,24 @@ module Soundcloud9000
       DEFAULT_LIMIT = 50
 
       attr_reader :limit
-      attr_accessor :collection_to_load, :user, :playlist, :shuffle, :help, :query
+
+      attr_accessor(
+        :collection_to_load,
+        :user,
+        :playlist,
+        :shuffle,
+        :help,
+        :query
+      )
 
       def initialize(client)
         super
+
         @limit = DEFAULT_LIMIT
-        @collection_to_load = client.current_user ? :favorites : :recent
-        @shuffle = false
         @query = 'electronic'
+        @collection_to_load =
+          client.current_user ? :favorites : :recent
+        @shuffle = false
         @help = false
       end
 
@@ -83,26 +93,24 @@ module Soundcloud9000
 
         if tracks.empty?
           UI::Input.error(
-            "'#{@client.current_user.username}' has not authored any tracks. " \
-            'Use f to switch to favorites, or s to switch to playlists.'
+            "'#{@client.current_user.username}' has not authored tracks. " \
+            'Use f for likes or s for playlists.'
           )
-          []
-        else
-          tracks
         end
+
+        tracks
       end
 
       def playlist_tracks
         return [] if @playlist.nil?
+        return [] if @page.positive?
 
         response = @client.get(
-          "/playlists/#{@playlist.id}/tracks",
-          offset: @limit * @page,
-          limit: @limit,
-          linked_partitioning: 1
+          "/playlists/#{@playlist.id}",
+          representation: 'full'
         )
 
-        extract_tracks(response)
+        response['tracks'] || []
       end
 
       private
