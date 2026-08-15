@@ -3,7 +3,6 @@ require_relative '../application'
 
 module Soundcloud9000
   module Models
-    # stores information for each track that hits the player
     class Track
       def initialize(hash)
         @hash = hash
@@ -14,7 +13,7 @@ module Soundcloud9000
       end
 
       def title
-        @hash['title']
+        @hash['title'] || 'Untitled'
       end
 
       def url
@@ -22,7 +21,7 @@ module Soundcloud9000
       end
 
       def user
-        @user ||= User.new(@hash['user'])
+        @user ||= User.new(@hash['user'] || {})
       end
 
       def username
@@ -30,7 +29,9 @@ module Soundcloud9000
       end
 
       def duration
-        @hash['duration']
+        @hash['full_duration'] ||
+          @hash['duration'] ||
+          0
       end
 
       def length
@@ -38,11 +39,13 @@ module Soundcloud9000
       end
 
       def likes
-        @hash['favoritings_count']
+        @hash['likes_count'] ||
+          @hash['favoritings_count'] ||
+          0
       end
 
       def comments
-        @hash['comment_count']
+        @hash['comment_count'] || 0
       end
 
       def stream_url
@@ -51,6 +54,10 @@ module Soundcloud9000
 
       def transcodings
         @hash.dig('media', 'transcodings') || []
+      end
+
+      def playable?
+        !transcodings.empty? || !stream_url.to_s.empty?
       end
     end
   end

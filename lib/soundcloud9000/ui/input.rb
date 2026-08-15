@@ -29,6 +29,7 @@ module Soundcloud9000
         'f' => :f,
         'm' => :m,
         'h' => :h,
+        '/' => :search,
         'o' => :o
       }.freeze
 

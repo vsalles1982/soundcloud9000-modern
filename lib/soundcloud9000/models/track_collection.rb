@@ -8,13 +8,14 @@ module Soundcloud9000
       DEFAULT_LIMIT = 50
 
       attr_reader :limit
-      attr_accessor :collection_to_load, :user, :playlist, :shuffle, :help
+      attr_accessor :collection_to_load, :user, :playlist, :shuffle, :help, :query
 
       def initialize(client)
         super
         @limit = DEFAULT_LIMIT
-        @collection_to_load = :recent
+        @collection_to_load = client.current_user ? :favorites : :recent
         @shuffle = false
+        @query = 'electronic'
         @help = false
       end
 
@@ -59,7 +60,7 @@ module Soundcloud9000
       def recent_tracks
         response = @client.get(
           '/search/tracks',
-          q: 'electronic',
+          q: @query,
           offset: @page * limit,
           limit: @limit,
           linked_partitioning: 1

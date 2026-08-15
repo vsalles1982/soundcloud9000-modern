@@ -6,6 +6,14 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cd "$PROJECT_DIR"
 
+CONFIG_FILE="$PROJECT_DIR/.soundcloud9000.env"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+  source "$CONFIG_FILE"
+fi
+
+export SC_USERNAME="${SC_USERNAME:-vsalles82}"
+
 exec bundle _2.7.2_ exec ruby \
   -Ilib \
   -rsoundcloud9000 \
