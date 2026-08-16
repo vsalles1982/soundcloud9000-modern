@@ -6,6 +6,7 @@ module Soundcloud9000
   module Models
     class TrackCollection < Collection
       DEFAULT_LIMIT = 50
+      HYDRATION_BATCH_SIZE = 50
 
       attr_reader :limit
 
@@ -110,7 +111,9 @@ module Soundcloud9000
           representation: 'full'
         )
 
-        response['tracks'] || []
+        tracks = response['tracks'] || []
+
+        hydrate_playlist_tracks(tracks)
       end
 
       private
@@ -123,6 +126,55 @@ module Soundcloud9000
         collection.filter_map do |item|
           item['track'] || item
         end
+      end
+
+      def hydrate_playlist_tracks(tracks)
+        incomplete_tracks = tracks.select do |track|
+          incomplete_track?(track)
+        end
+
+        return tracks if incomplete_tracks.empty?
+
+        details_by_id = {}
+
+        incomplete_tracks
+          .map { |track| track['id'] }
+          .compact
+          .each_slice(HYDRATION_BATCH_SIZE) do |ids|
+            response = @client.get(
+              '/tracks',
+              ids: ids.join(',')
+            )
+
+            extract_tracks(response).each do |track|
+              details_by_id[track['id'].to_i] = track
+            end
+          end
+
+        tracks.filter_map do |track|
+          id = track['id'].to_i
+          detailed_track = details_by_id[id]
+
+          if detailed_track
+            detailed_track
+          elsif incomplete_track?(track)
+            nil
+          else
+            track
+          end
+        end
+      end
+
+      def incomplete_track?(track)
+        return true if track.nil?
+        return true if track['title'].to_s.empty?
+        return true if track['user'].nil?
+
+        transcodings =
+          track.dig('media', 'transcodings') || []
+
+        transcodings.empty? &&
+          track['stream_url'].to_s.empty?
       end
     end
   end
