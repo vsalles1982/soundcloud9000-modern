@@ -2,7 +2,6 @@ require_relative '../ui/view'
 
 module Soundcloud9000
   module Views
-    # is responsible for drawing the wonderful splash screen
     class Splash < UI::View
       CONTENT = %q{
                                          ohmmNNmmdyoo.
@@ -32,17 +31,30 @@ module Soundcloud9000
 |___/\___/ \__,_|_| |_|\__,_|\___|_|\___/ \__,_|\__,_| /_/  \___/ \___/ \___/
 
           Originally Developed by Matthias Georgi and Tobias Schmidt
-                    Currently Maintained by Sumanth Ratna
+                    Maintained by Sumanth Ratna
+                API v2 Revival by vsalles82
 }.freeze
 
       protected
 
       def left
-        (rect.width - lines.map(&:length).max) / 2
+        [
+          (
+            rect.width -
+            lines.map(&:length).max
+          ) / 2,
+          0
+        ].max
       end
 
       def top
-        (rect.height - lines.size) / 2
+        [
+          (
+            rect.height -
+            lines.size
+          ) / 2,
+          0
+        ].max
       end
 
       def lines
@@ -50,10 +62,17 @@ module Soundcloud9000
       end
 
       def draw
-        0.upto(top) { line '' }
+        top.times do
+          line('')
+        end
+
         lines.each do |row|
+          break if lines_left <= 0
+
           with_color(:green) do
-            line ' ' * left + row
+            line(
+              (' ' * left) + row
+            )
           end
         end
       end
@@ -61,7 +80,6 @@ module Soundcloud9000
       def refresh
         super
 
-        # show until any keypress
         @window.getch
       end
     end

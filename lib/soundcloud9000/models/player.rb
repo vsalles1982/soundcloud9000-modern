@@ -3,6 +3,7 @@ require 'socket'
 require 'tmpdir'
 
 require_relative '../events'
+require_relative 'spectrum'
 
 module Soundcloud9000
   module Models
@@ -15,6 +16,7 @@ module Soundcloud9000
         @paused = false
         @pid = nil
         @manually_stopped = {}
+        @spectrum_reader = Spectrum.new
 
         @socket_path = File.join(
           Dir.tmpdir,
@@ -22,7 +24,7 @@ module Soundcloud9000
         )
 
         at_exit do
-          stop
+          shutdown
         end
       end
 
@@ -57,6 +59,10 @@ module Soundcloud9000
         )
       end
 
+      def spectrum
+        @spectrum_reader.levels
+      end
+
       def play_progress
         total = duration
         return 0.0 if total <= 0
@@ -75,7 +81,6 @@ module Soundcloud9000
         ).to_f
 
         return mpv_duration if mpv_duration.positive?
-
         return 0.0 unless @track
 
         @track.duration.to_f / 1000
@@ -91,7 +96,7 @@ module Soundcloud9000
       end
 
       def level
-        0.0
+        spectrum.max.to_f
       end
 
       def seconds_played
@@ -141,7 +146,6 @@ module Soundcloud9000
         return if pid.nil?
 
         @manually_stopped[pid] = true
-
         command('quit')
 
         begin
@@ -157,6 +161,11 @@ module Soundcloud9000
         @paused = false
 
         remove_socket
+      end
+
+      def shutdown
+        stop
+        @spectrum_reader.stop
       end
 
       def start
@@ -299,7 +308,7 @@ module Soundcloud9000
               :progress
             )
 
-            sleep 0.25
+            sleep 0.08
           end
         rescue StandardError => error
           Soundcloud9000::Application.logger.error(
@@ -323,3 +332,4 @@ module Soundcloud9000
     end
   end
 end
+
