@@ -28,6 +28,8 @@ module Soundcloud9000
         '9' => :nine,
         'f' => :f,
         'm' => :m,
+        'n' => :next_track,
+        'p' => :previous_track,
         'h' => :h,
         '/' => :search,
         'o' => :o

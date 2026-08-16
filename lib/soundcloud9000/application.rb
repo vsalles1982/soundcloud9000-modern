@@ -127,7 +127,9 @@ module Soundcloud9000
            :m,
            :h,
            :o,
-           :search
+           :search,
+           :next_track,
+           :previous_track
         @track_controller.events.trigger(
           :key,
           key

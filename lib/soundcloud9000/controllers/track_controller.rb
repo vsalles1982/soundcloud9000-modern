@@ -17,8 +17,13 @@ module Soundcloud9000
         events.on(:key) do |key|
           case key
           when :enter
-            @view.select
-            events.trigger(:select, current_track)
+            play_current_track
+
+          when :next_track
+            next_track
+
+          when :previous_track
+            previous_track
 
           when :search
             search_tracks
@@ -54,16 +59,21 @@ module Soundcloud9000
       end
 
       def fetch_user_with_message(message)
-        permalink = UI::Input.getstr(message).to_s.strip
+        permalink = UI::Input.getstr(
+          message
+        ).to_s.strip
+
         return nil if permalink.empty?
 
-        user_hash = @client.resolve(permalink)
+        user_hash = @client.resolve(
+          permalink
+        )
 
         if user_hash
           Models::User.new(user_hash)
         else
           UI::Input.error(
-            "No such user '#{permalink}'. Use u to try again."
+            "No such user '#{permalink}'."
           )
           nil
         end
@@ -85,15 +95,49 @@ module Soundcloud9000
       def next_track
         if @tracks.shuffle
           @view.random
-        else
+        elsif @view.current + 1 < @tracks.size
           @view.down
+        else
+          UI::Input.message(
+            'Already at the final track.'
+          )
+          return
         end
 
-        @view.select
-        events.trigger(:select, current_track)
+        play_current_track
+      end
+
+      def previous_track
+        if @view.current.zero?
+          UI::Input.message(
+            'Already at the first track.'
+          )
+          return
+        end
+
+        @view.up
+        play_current_track
       end
 
       private
+
+      def play_current_track
+        track = current_track
+
+        if track.nil?
+          UI::Input.error(
+            'No track is currently selected.'
+          )
+          return
+        end
+
+        @view.select
+
+        events.trigger(
+          :select,
+          track
+        )
+      end
 
       def search_tracks
         query = UI::Input.getstr(
@@ -121,9 +165,10 @@ module Soundcloud9000
 
       def load_favorites
         if @client.current_user.nil?
-          @client.current_user = fetch_user_with_message(
-            "Change to SoundCloud user's favourites: "
-          )
+          @client.current_user =
+            fetch_user_with_message(
+              "Change to SoundCloud user's favourites: "
+            )
         end
 
         return if @client.current_user.nil?
@@ -134,15 +179,17 @@ module Soundcloud9000
 
       def load_playlist
         if @client.current_user.nil?
-          @client.current_user = fetch_user_with_message(
-            'Change to SoundCloud user: '
-          )
+          @client.current_user =
+            fetch_user_with_message(
+              'Change to SoundCloud user: '
+            )
         end
 
         return if @client.current_user.nil?
 
         response = @client.get(
-          "/users/#{@client.current_user.id}/playlists_without_albums",
+          "/users/#{@client.current_user.id}/" \
+          'playlists_without_albums',
           limit: 50,
           linked_partitioning: 1
         )
@@ -154,7 +201,9 @@ module Soundcloud9000
             response
           end
 
-        selected_playlist = choose_playlist(playlists)
+        selected_playlist =
+          choose_playlist(playlists)
+
         return if selected_playlist.nil?
 
         @tracks.playlist = Models::Playlist.new(
@@ -173,7 +222,8 @@ module Soundcloud9000
         @tracks.shuffle = !@tracks.shuffle
 
         UI::Input.message(
-          "Shuffle #{@tracks.shuffle ? 'enabled' : 'disabled'}."
+          "Shuffle " \
+          "#{@tracks.shuffle ? 'enabled' : 'disabled'}."
         )
       end
 
@@ -186,11 +236,24 @@ module Soundcloud9000
         end
 
         selected = 0
-        visible_rows = [Curses.lines - 6, 15].min
+        visible_rows = [
+          Curses.lines - 6,
+          15
+        ].min
+
         height = visible_rows + 4
-        width = [Curses.cols - 4, 90].min
-        top = (Curses.lines - height) / 2
-        left = (Curses.cols - width) / 2
+        width = [
+          Curses.cols - 4,
+          90
+        ].min
+
+        top = (
+          Curses.lines - height
+        ) / 2
+
+        left = (
+          Curses.cols - width
+        ) / 2
 
         window = Curses::Window.new(
           height,
@@ -198,6 +261,7 @@ module Soundcloud9000
           top,
           left
         )
+
         window.keypad(true)
 
         loop do
@@ -257,18 +321,30 @@ module Soundcloud9000
           end
 
         visible_playlists =
-          playlists.slice(offset, visible_rows) || []
+          playlists.slice(
+            offset,
+            visible_rows
+          ) || []
 
         visible_playlists.each_with_index do |playlist, row|
           index = offset + row
           title = playlist['title'].to_s
           prefix = index == selected ? '> ' : '  '
-          text = "#{prefix}#{title}"[0, width - 4]
 
-          window.setpos(row + 3, 2)
+          text = "#{prefix}#{title}"[
+            0,
+            width - 4
+          ]
+
+          window.setpos(
+            row + 3,
+            2
+          )
 
           if index == selected
-            window.attron(Curses::A_REVERSE) do
+            window.attron(
+              Curses::A_REVERSE
+            ) do
               window.addstr(text)
             end
           else
@@ -280,10 +356,23 @@ module Soundcloud9000
       end
 
       def show_help
-        height = [Curses.lines - 2, 32].min
-        width = [Curses.cols - 2, 84].min
-        top = (Curses.lines - height) / 2
-        left = (Curses.cols - width) / 2
+        height = [
+          Curses.lines - 2,
+          34
+        ].min
+
+        width = [
+          Curses.cols - 2,
+          84
+        ].min
+
+        top = (
+          Curses.lines - height
+        ) / 2
+
+        left = (
+          Curses.cols - width
+        ) / 2
 
         window = Curses::Window.new(
           height,
@@ -291,6 +380,7 @@ module Soundcloud9000
           top,
           left
         )
+
         window.keypad(true)
 
         window.attrset(
@@ -304,17 +394,19 @@ module Soundcloud9000
 
           Enter       Play selected track
           Space       Play or pause
-          Up / k      Previous item
-          Down / j    Next item
+          n           Next track
+          p           Previous track
+          Up / k      Move selection up
+          Down / j    Move selection down
           Left        Rewind 5 seconds
           Right       Forward 5 seconds
-          1–9         Jump to a percentage of the track
+          1–9         Jump to a percentage
 
-          /           Search tracks, artists or genres
+          /           Search tracks or artists
           u           Load tracks from a user
           f           Return to liked tracks
-          s           Choose one of the user's playlists
-          m           Toggle shuffle mode
+          s           Choose a playlist
+          m           Toggle shuffle
           h           Open this help
           Ctrl+C      Exit
         HELP
@@ -325,7 +417,10 @@ module Soundcloud9000
           break if window.cury >= height - 2
 
           window.addstr(
-            line.chomp[0, width - 4]
+            line.chomp[
+              0,
+              width - 4
+            ]
           )
 
           window.setpos(
