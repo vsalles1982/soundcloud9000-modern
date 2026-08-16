@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    soundcloud9000 (0.2.0.pre1)
+    soundcloud9000 (0.2.0)
       curses (>= 1.4, < 2)
       logger (>= 1.6, < 2)
 
