@@ -1,5 +1,4 @@
 require_relative 'user'
-require_relative '../application'
 
 module Soundcloud9000
   module Models

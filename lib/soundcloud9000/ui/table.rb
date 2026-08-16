@@ -33,6 +33,7 @@ module Soundcloud9000
           @current = 0
           @top = 0
           @selected = nil
+
           clear
           render
         end
@@ -43,7 +44,7 @@ module Soundcloud9000
       end
 
       def body_height
-        rect.height - @header.size
+        rect.height - 1
       end
 
       def bottom?
@@ -54,6 +55,7 @@ module Soundcloud9000
         return unless @current.positive?
 
         @current -= 1
+
         ensure_current_visible
         render
       end
@@ -62,6 +64,7 @@ module Soundcloud9000
         return unless @current + 1 < length
 
         @current += 1
+
         ensure_current_visible
         render
       end
@@ -82,6 +85,7 @@ module Soundcloud9000
 
       def select
         @selected = @current
+
         ensure_current_visible
         render
       end
@@ -102,11 +106,14 @@ module Soundcloud9000
       end
 
       def rest_width(elements)
-        used_width = elements.sum
+        separator_width =
+          (
+            elements.length - 1
+          ) * SEPARATOR.length
 
         rect.width -
-          elements.size * SEPARATOR.size -
-          used_width
+          separator_width -
+          elements.sum
       end
 
       def perform_layout
@@ -115,16 +122,20 @@ module Soundcloud9000
         (rows + [header]).each do |row|
           row.each_with_index do |value, index|
             current_size = value.to_s.length
-            maximum = @sizes[index] || 0
+            maximum_size = @sizes[index] || 0
 
-            if current_size > maximum
+            if current_size > maximum_size
               @sizes[index] = current_size
             end
           end
         end
 
+        return if @sizes.empty?
+
         @sizes[-1] = [
-          rest_width(@sizes[0...-1]),
+          rest_width(
+            @sizes[0...-1]
+          ),
           1
         ].max
       end
@@ -153,28 +164,33 @@ module Soundcloud9000
       end
 
       def draw_body
-        visible_rows =
-          rows(@top, body_height + 1)
+        visible_rows = rows(
+          @top,
+          body_height
+        )
 
         visible_rows.each_with_index do |row, index|
-          with_color(color_for(index)) do
+          with_color(
+            color_for(index)
+          ) do
             draw_values(row)
           end
         end
       end
 
-    def draw_values(values)
-  content = values.each_with_index.map do |value, index|
-    width = @sizes[index]
+      def draw_values(values)
+        content = values.each_with_index.map do |value, index|
+          width = @sizes[index] || 1
 
-    value
-      .to_s
-      .slice(0, width)
-      .ljust(width)
-  end.join(SEPARATOR)
+          value
+            .to_s
+            .slice(0, width)
+            .ljust(width)
+        end.join(SEPARATOR)
 
-  line(content)
-end
+        line(content)
+      end
+
       def ensure_current_visible
         visible_height = [
           body_height,
@@ -184,7 +200,10 @@ end
         if @current < @top
           @top = @current
         elsif @current >= @top + visible_height
-          @top = @current - visible_height + 1
+          @top =
+            @current -
+            visible_height +
+            1
         end
 
         maximum_top = [

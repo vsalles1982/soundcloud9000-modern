@@ -1,6 +1,5 @@
 require_relative '../time_helper'
 require_relative '../ui/view'
-require_relative '../models/track_collection'
 
 module Soundcloud9000
   module Views

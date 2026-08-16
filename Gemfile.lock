@@ -10,6 +10,7 @@ GEM
   specs:
     curses (1.6.0)
     logger (1.7.0)
+    minitest (5.27.0)
     mocha (2.8.2)
       ruby2_keywords (>= 0.0.5)
     rake (13.4.2)
@@ -21,6 +22,7 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (>= 2.7, < 5)
+  minitest (~> 5.25)
   mocha (~> 2.0)
   rake (~> 13.0)
   soundcloud9000!
