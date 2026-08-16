@@ -4,7 +4,6 @@ require_relative 'color'
 
 module Soundcloud9000
   module UI
-    # class responsible for helping keep our app tidy and populated
     class View
       ROW_SEPARATOR = '|'.freeze
       LINE_SEPARATOR = '-'.freeze
@@ -14,17 +13,29 @@ module Soundcloud9000
 
       def initialize(rect)
         @rect = rect
-        # use Pad instead of Window?
-        @window = Curses::Window.new(rect.height, rect.width, rect.y, rect.x)
+
+        @window = Curses::Window.new(
+          rect.height,
+          rect.width,
+          rect.y,
+          rect.x
+        )
+
         @line = 0
         @padding = 0
       end
 
       def padding(value = nil)
-        value.nil? ? @padding : @padding = value
+        if value.nil?
+          @padding
+        else
+          @padding = value
+        end
       end
 
       def render
+        @window.erase
+
         perform_layout
         reset
         draw
@@ -32,15 +43,21 @@ module Soundcloud9000
       end
 
       def body_width
-        rect.width - 2 * padding
+        [
+          rect.width - 2 * padding,
+          1
+        ].max
       end
 
       def with_color(name, &block)
-        @window.attron(Color.get(name), &block)
+        @window.attron(
+          Color.get(name),
+          &block
+        )
       end
 
       def clear
-        @window.clear
+        @window.erase
       end
 
       protected
@@ -50,8 +67,22 @@ module Soundcloud9000
       end
 
       def line(content)
-        @window.setpos(@line, padding)
-        @window.addstr(content.ljust(body_width).slice(0, body_width))
+        return if @line >= rect.height
+
+        @window.setpos(
+          @line,
+          padding
+        )
+
+        visible_content = content
+          .to_s
+          .ljust(body_width)
+          .slice(0, body_width)
+
+        @window.addstr(
+          visible_content
+        )
+
         @line += 1
       end
 
@@ -63,7 +94,9 @@ module Soundcloud9000
         @window.refresh
       end
 
-      def perform_layout; end
+      def perform_layout
+        nil
+      end
 
       def draw
         raise NotImplementedError

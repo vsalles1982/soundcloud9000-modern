@@ -163,20 +163,18 @@ module Soundcloud9000
         end
       end
 
-      def draw_values(values)
-        position = -1
+    def draw_values(values)
+  content = values.each_with_index.map do |value, index|
+    width = @sizes[index]
 
-        content = values.map do |value|
-          position += 1
+    value
+      .to_s
+      .slice(0, width)
+      .ljust(width)
+  end.join(SEPARATOR)
 
-          value.to_s.ljust(
-            @sizes[position]
-          )
-        end.join(SEPARATOR)
-
-        line(content)
-      end
-
+  line(content)
+end
       def ensure_current_visible
         visible_height = [
           body_height,
