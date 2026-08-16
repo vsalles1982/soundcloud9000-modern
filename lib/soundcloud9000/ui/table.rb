@@ -2,7 +2,6 @@ require_relative 'view'
 
 module Soundcloud9000
   module UI
-    # responsible for drawing our table of tracks
     class Table < View
       SEPARATOR = '  |  '.freeze
 
@@ -25,8 +24,18 @@ module Soundcloud9000
         raise ArgumentError if @collection
 
         @collection = collection
-        @collection.events.on(:append) { render }
-        @collection.events.on(:replace) { clear; render }
+
+        @collection.events.on(:append) do
+          render
+        end
+
+        @collection.events.on(:replace) do
+          @current = 0
+          @top = 0
+          @selected = nil
+          clear
+          render
+        end
       end
 
       def length
@@ -42,30 +51,38 @@ module Soundcloud9000
       end
 
       def up
-        if @current > 0
-          @current -= 1
-          @top -= 1 if @current < @top
-          render
-        end
+        return unless @current.positive?
+
+        @current -= 1
+        ensure_current_visible
+        render
       end
 
       def down
-        if (@current + 1) < length
-          @current += 1
-          @top += 1 if @current > body_height
-          render
-        end
+        return unless @current + 1 < length
+
+        @current += 1
+        ensure_current_visible
+        render
       end
 
       def random
-        @current = rand(length)
-        @top -= 1 if @current < @top
-        @top += 1 if @current > body_height
+        return if length <= 1
+
+        previous = @current
+        candidate = rand(length - 1)
+
+        candidate += 1 if candidate >= previous
+
+        @current = candidate
+
+        ensure_current_visible
         render
       end
 
       def select
         @selected = @current
+        ensure_current_visible
         render
       end
 
@@ -78,26 +95,38 @@ module Soundcloud9000
 
       def rows(start = 0, size = collection.size)
         collection[start, size].map do |record|
-          keys.map { |key| record.send(key).to_s }
+          keys.map do |key|
+            record.send(key).to_s
+          end
         end
       end
 
       def rest_width(elements)
-        rect.width - elements.size * SEPARATOR.size -
-          elements.inject(0) { |_a, e| + e }
+        used_width = elements.sum
+
+        rect.width -
+          elements.size * SEPARATOR.size -
+          used_width
       end
 
       def perform_layout
         @sizes = []
+
         (rows + [header]).each do |row|
           row.each_with_index do |value, index|
-            current = value.to_s.length
-            max = @sizes[index] || 0
-            @sizes[index] = current if max < current
+            current_size = value.to_s.length
+            maximum = @sizes[index] || 0
+
+            if current_size > maximum
+              @sizes[index] = current_size
+            end
           end
         end
 
-        @sizes[-1] = rest_width(@sizes[0...-1])
+        @sizes[-1] = [
+          rest_width(@sizes[0...-1]),
+          1
+        ].max
       end
 
       def draw
@@ -112,9 +141,11 @@ module Soundcloud9000
       end
 
       def color_for(index)
-        if @top + index == @current
+        absolute_index = @top + index
+
+        if absolute_index == @current
           :cyan
-        elsif @top + index == @selected
+        elsif absolute_index == @selected
           :black
         else
           :white
@@ -122,7 +153,10 @@ module Soundcloud9000
       end
 
       def draw_body
-        rows(@top, body_height + 1).each_with_index do |row, index|
+        visible_rows =
+          rows(@top, body_height + 1)
+
+        visible_rows.each_with_index do |row, index|
           with_color(color_for(index)) do
             draw_values(row)
           end
@@ -130,10 +164,40 @@ module Soundcloud9000
       end
 
       def draw_values(values)
-        i = -1
-        content = values.map { |value| value.ljust(@sizes[i += 1]) }.join(SEPARATOR)
+        position = -1
 
-        line content
+        content = values.map do |value|
+          position += 1
+
+          value.to_s.ljust(
+            @sizes[position]
+          )
+        end.join(SEPARATOR)
+
+        line(content)
+      end
+
+      def ensure_current_visible
+        visible_height = [
+          body_height,
+          1
+        ].max
+
+        if @current < @top
+          @top = @current
+        elsif @current >= @top + visible_height
+          @top = @current - visible_height + 1
+        end
+
+        maximum_top = [
+          length - visible_height,
+          0
+        ].max
+
+        @top = [
+          [@top, 0].max,
+          maximum_top
+        ].min
       end
     end
   end
