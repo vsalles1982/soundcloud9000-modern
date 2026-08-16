@@ -28,6 +28,12 @@ module Soundcloud9000
           client.current_user ? :favorites : :recent
         @shuffle = false
         @help = false
+        @next_href = nil
+      end
+
+      def clear
+        super
+        @next_href = nil
       end
 
       def size
@@ -48,22 +54,38 @@ module Soundcloud9000
       def load_more
         return if @loaded
 
-        tracks = send("#{@collection_to_load}_tracks")
+        tracks = send(
+          "#{@collection_to_load}_tracks"
+        )
+
         @loaded = true if tracks.empty?
 
-        append(tracks.map { |hash| Track.new(hash) })
+        append(
+          tracks.map { |hash| Track.new(hash) }
+        )
+
         @page += 1
       end
 
       def favorites_tracks
         return [] if @client.current_user.nil?
 
-        response = @client.get(
-          "/users/#{@client.current_user.id}/track_likes",
-          offset: @limit * @page,
-          limit: @limit,
-          linked_partitioning: 1
-        )
+        response =
+          if @page.zero?
+            @client.get(
+              "/users/#{@client.current_user.id}/track_likes",
+              limit: @limit,
+              linked_partitioning: 1
+            )
+          elsif @next_href
+            @client.get(@next_href)
+          else
+            @loaded = true
+            return []
+          end
+
+        @next_href = response['next_href']
+        @loaded = true if @next_href.to_s.empty?
 
         extract_tracks(response)
       end
@@ -94,7 +116,8 @@ module Soundcloud9000
 
         if tracks.empty?
           UI::Input.error(
-            "'#{@client.current_user.username}' has not authored tracks. " \
+            "'#{@client.current_user.username}' " \
+            'has not authored tracks. ' \
             'Use f for likes or s for playlists.'
           )
         end
@@ -147,7 +170,9 @@ module Soundcloud9000
             )
 
             extract_tracks(response).each do |track|
-              details_by_id[track['id'].to_i] = track
+              details_by_id[
+                track['id'].to_i
+              ] = track
             end
           end
 
@@ -171,7 +196,10 @@ module Soundcloud9000
         return true if track['user'].nil?
 
         transcodings =
-          track.dig('media', 'transcodings') || []
+          track.dig(
+            'media',
+            'transcodings'
+          ) || []
 
         transcodings.empty? &&
           track['stream_url'].to_s.empty?
