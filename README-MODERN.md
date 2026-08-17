@@ -1,5 +1,5 @@
 # SoundCloud9000 Modern
-
+![SoundCloud9000 terminal player](docs/images/soundcloud9000-splash.png)
 A modern revival of the original Ruby/curses SoundCloud terminal player, updated for SoundCloud API v2, current Ruby versions and modern Linux audio systems.
 
 ![Version](https://img.shields.io/badge/version-0.2.0-a6ff4d)
