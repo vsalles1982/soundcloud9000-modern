@@ -1,11 +1,24 @@
 # SoundCloud9000 Modern
-![SoundCloud9000 terminal player](docs/images/soundcloud9000-splash.png)
-A modern revival of the original Ruby/curses SoundCloud terminal player, updated for SoundCloud API v2, current Ruby versions and modern Linux audio systems.
+
+A modern revival of the original Ruby/curses SoundCloud terminal player, updated for SoundCloud API v2, modern Ruby versions and current Linux audio systems.
 
 ![Version](https://img.shields.io/badge/version-0.2.0-a6ff4d)
 ![Ruby](https://img.shields.io/badge/Ruby-3.1%2B-cc342d)
 ![Platform](https://img.shields.io/badge/platform-Arch%20Linux-1793d1)
+![Installed size](https://img.shields.io/badge/installed-2.42%20MiB-a6ff4d)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+
+> The next generation SoundCloud terminal client — revived for API v2.
+
+## Screenshots
+
+### Splash screen
+
+![SoundCloud9000 splash screen](docs/images/soundcloud9000-splash.png)
+
+### Terminal player
+
+![SoundCloud9000 terminal player](docs/images/soundcloud9000-player.png)
 
 ## Features
 
@@ -13,8 +26,8 @@ A modern revival of the original Ruby/curses SoundCloud terminal player, updated
 - Liked tracks
 - User playlists
 - Track search
-- Playback through `mpv`
 - Progressive and HLS streams
+- Playback through `mpv`
 - Automatic next track
 - Sequential and shuffle playback
 - Playback position controls
@@ -23,7 +36,9 @@ A modern revival of the original Ruby/curses SoundCloud terminal player, updated
 - Arch Linux and Omarchy launcher integration
 - Diagnostic command
 - No direct ALSA manipulation
-- No modification of PipeWire, PulseAudio or Bluetooth configuration
+- No changes to PipeWire, PulseAudio or Bluetooth configuration
+- Only 564 KiB to download
+- Only 2.42 MiB installed
 
 ## Arch Linux and Omarchy installation
 
@@ -72,7 +87,7 @@ sudo pacman -U \
   https://github.com/vsalles1982/soundcloud9000-modern/releases/download/v0.2.0/soundcloud9000-0.2.0-2-x86_64.pkg.tar.zst
 ```
 
-Pacman downloads and verifies the accompanying detached signature automatically.
+Pacman downloads and verifies the detached signature automatically.
 
 ## Configuration
 
@@ -91,7 +106,7 @@ Create the configuration file:
 nano ~/.config/soundcloud9000/env
 ```
 
-Add your own valid SoundCloud API client ID:
+Add your own valid SoundCloud API client ID and username:
 
 ```bash
 SC_CLIENT_ID='YOUR_VALID_CLIENT_ID'
@@ -104,7 +119,7 @@ Protect the file:
 chmod 600 ~/.config/soundcloud9000/env
 ```
 
-The configuration file is user-owned and is never included in the package, Git repository or release artifacts.
+The configuration is owned by the local user and is never included in the Arch package, Git repository or release artifacts.
 
 ## Diagnostics
 
@@ -145,12 +160,12 @@ SoundCloud9000
 | Key | Action |
 |---|---|
 | Up / Down | Move through tracks |
-| Enter | Play selected track |
-| `n` | Play next track |
+| Enter | Play the selected track |
+| `n` | Play the next track |
 | `m` | Toggle shuffle mode |
 | `0`–`9` | Jump through the current track |
 | `f` | Switch to liked tracks |
-| `s` | Open track search |
+| `s` | Search for tracks |
 | `q` | Quit |
 
 Additional controls are shown inside the application when available.
@@ -183,6 +198,17 @@ Verify downloaded artifacts with:
 sha256sum -c SHA256SUMS --ignore-missing
 ```
 
+## Package size
+
+| Artifact | Size |
+|---|---:|
+| Arch package download | 564.4 KiB |
+| Installed package | 2.42 MiB |
+| RubyGem | approximately 19 KiB |
+| Source archive | approximately 20 KiB |
+
+The RubyGem, source archive and Arch package are alternative distribution formats and should not be added together.
+
 ## Updating
 
 Download and install the package from a newer GitHub Release:
@@ -195,26 +221,32 @@ Existing configuration under `~/.config/soundcloud9000/` is preserved.
 
 ## Uninstalling
 
-Remove the package:
+Remove the application:
 
 ```bash
 sudo pacman -Rns soundcloud9000
 ```
 
-Optional: remove the user configuration:
+Optionally remove the user configuration:
 
 ```bash
 rm -r ~/.config/soundcloud9000
 ```
 
-The configuration removal is optional and cannot be undone.
+Removing the configuration is optional and cannot be undone.
 
 ## Building the Arch package
 
 Install the build requirements:
 
 ```bash
-sudo pacman -S --needed base-devel ruby mpv cava ncurses pacman-contrib
+sudo pacman -S --needed \
+  base-devel \
+  ruby \
+  mpv \
+  cava \
+  ncurses \
+  pacman-contrib
 ```
 
 Clone the repository:
@@ -239,18 +271,28 @@ sudo pacman -U \
   ./soundcloud9000-0.2.0-2-x86_64.pkg.tar.zst
 ```
 
-All package sources have fixed SHA-256 checksums. No Bundler operation or remote dependency installation occurs in the pacman installation phase.
+All package sources have fixed SHA-256 checksums. No Bundler operation or remote dependency installation occurs during the pacman installation phase.
 
 ## Development from source
 
 Install dependencies:
 
 ```bash
-sudo pacman -S --needed base-devel ruby mpv cava ncurses
+sudo pacman -S --needed \
+  base-devel \
+  ruby \
+  mpv \
+  cava \
+  ncurses
+```
+
+Install the required Bundler version:
+
+```bash
 gem install --user-install bundler:2.7.2
 ```
 
-Clone and prepare:
+Clone and prepare the project:
 
 ```bash
 git clone \
@@ -262,7 +304,7 @@ bundle _2.7.2_ config set --local path vendor/bundle
 bundle _2.7.2_ install
 ```
 
-Run the tests:
+Run the test suite:
 
 ```bash
 bundle _2.7.2_ exec rake
@@ -303,8 +345,9 @@ The obsolete Audite, PortAudio and direct ALSA audio chain has been removed.
 - Arch packages are signed with Ed25519.
 - Release artifacts include SHA-256 checksums.
 - Runtime installation does not invoke Bundler.
+- Package sources have fixed checksums.
 - The application does not change system audio configuration.
-- Review the package sources under `packaging/arch/`.
+- Packaging sources are available under `packaging/arch/`.
 
 Report security concerns privately to the repository owner before opening a public issue when appropriate.
 
