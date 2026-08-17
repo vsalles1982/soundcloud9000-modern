@@ -14,11 +14,11 @@ A modern revival of the original Ruby/curses SoundCloud terminal player, updated
 
 ### Splash screen
 
-![SoundCloud9000 splash screen](docs/images/soundcloud9000-splash.png)
+![SoundCloud9000 splash screen](soundcloud9000.png)
 
 ### Terminal player
 
-![SoundCloud9000 terminal player](docs/images/soundcloud9000-player.png)
+![SoundCloud9000 terminal player](soundcloud9000-player.png)
 
 ## Features
 
@@ -87,7 +87,7 @@ sudo pacman -U \
   https://github.com/vsalles1982/soundcloud9000-modern/releases/download/v0.2.0/soundcloud9000-0.2.0-2-x86_64.pkg.tar.zst
 ```
 
-Pacman downloads and verifies the detached signature automatically.
+Pacman downloads and verifies the detached package signature automatically.
 
 ## Configuration
 
@@ -106,7 +106,7 @@ Create the configuration file:
 nano ~/.config/soundcloud9000/env
 ```
 
-Add your own valid SoundCloud API client ID and username:
+Add your own valid SoundCloud API client ID and SoundCloud username:
 
 ```bash
 SC_CLIENT_ID='YOUR_VALID_CLIENT_ID'
@@ -258,7 +258,7 @@ git clone \
 cd soundcloud9000-modern/packaging/arch
 ```
 
-Build:
+Build the package:
 
 ```bash
 makepkg -Ccf
@@ -275,7 +275,7 @@ All package sources have fixed SHA-256 checksums. No Bundler operation or remote
 
 ## Development from source
 
-Install dependencies:
+Install the development requirements:
 
 ```bash
 sudo pacman -S --needed \
