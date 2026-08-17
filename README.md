@@ -14,11 +14,9 @@ A modern revival of the original Ruby/curses SoundCloud terminal player, updated
 
 ### Splash screen
 
-![SoundCloud9000 splash screen](docs/images/soundcloud9000-splash.png)
 
 ### Terminal player
 
-![SoundCloud9000 terminal player](docs/images/soundcloud9000-player.png)
 
 ## Features
 
