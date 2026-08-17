@@ -1,0 +1,90 @@
+pkgname=soundcloud9000
+pkgver=0.2.0
+pkgrel=2
+pkgdesc="SoundCloud API v2 terminal player using Ruby, curses, mpv and Cava"
+arch=('x86_64')
+url="https://github.com/vsalles1982/soundcloud9000-modern"
+license=('MIT')
+
+depends=(
+  'ruby'
+  'ncurses'
+  'mpv'
+  'cava'
+)
+
+makedepends=(
+  'ruby'
+)
+
+optdepends=(
+  'pipewire-pulse: synchronized Cava spectrum through PulseAudio compatibility'
+)
+
+source=(
+  "soundcloud9000-${pkgver}.gem::https://github.com/vsalles1982/soundcloud9000-modern/releases/download/v${pkgver}/soundcloud9000-${pkgver}.gem"
+  "curses-1.6.0.gem::https://rubygems.org/downloads/curses-1.6.0.gem"
+  "logger-1.7.0.gem::https://rubygems.org/downloads/logger-1.7.0.gem"
+  "soundcloud9000-launcher"
+  "soundcloud9000.desktop"
+  "soundcloud9000.svg"
+)
+
+sha256sums=(
+  '4b864df140362d1b56dbb2f2904cdf25a26dcca4105a828bb63453b433016254'
+  '26cf27fd523ad0f4bc00a9c05f0fe9ccb1dfcc1a8521c739fe14c8f6e34078e2'
+  '196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203'
+  '94633bca3efee8b98bb485fb63642132ba80cce0b76833f8e12b53db71a0db77'
+  '723fb260079b8de8e0c292b17e2978e010a87eb466c5ca633848cf1a757ee0b4'
+  '9db2f2f7a41576509d13ed46b843036b790e3fa088f4a71d2e6184f687f54b4b'
+)
+
+package() {
+  local gemdir="$pkgdir/opt/soundcloud9000"
+
+  install -d "$gemdir"
+
+  gem install \
+    --local "$srcdir/logger-1.7.0.gem" \
+    --install-dir "$gemdir" \
+    --bindir "$gemdir/bin" \
+    --no-document \
+    --ignore-dependencies
+
+  gem install \
+    --local "$srcdir/curses-1.6.0.gem" \
+    --install-dir "$gemdir" \
+    --bindir "$gemdir/bin" \
+    --no-document \
+    --ignore-dependencies
+
+  gem install \
+    --local "$srcdir/soundcloud9000-${pkgver}.gem" \
+    --install-dir "$gemdir" \
+    --bindir "$gemdir/bin" \
+    --no-document \
+    --ignore-dependencies
+
+  rm -rf "$gemdir/cache"
+  rm -rf "$gemdir/doc"
+
+  install -Dm755 \
+    "$srcdir/soundcloud9000-launcher" \
+    "$pkgdir/usr/bin/soundcloud9000"
+
+  install -Dm644 \
+    "$srcdir/soundcloud9000.desktop" \
+    "$pkgdir/usr/share/applications/soundcloud9000.desktop"
+
+  install -Dm644 \
+    "$srcdir/soundcloud9000.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/soundcloud9000.svg"
+
+  install -Dm644 \
+    "$gemdir/gems/soundcloud9000-${pkgver}/LICENSE" \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+  install -Dm644 \
+    "$gemdir/gems/soundcloud9000-${pkgver}/README.md" \
+    "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

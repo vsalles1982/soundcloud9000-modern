@@ -1,0 +1,24 @@
+#!/bin/bash
+
+config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+config_file="$config_home/soundcloud9000/env"
+legacy_config="$HOME/.soundcloud9000.env"
+
+if [[ -r "$config_file" ]]; then
+  set -a
+  source "$config_file"
+  set +a
+elif [[ -r "$legacy_config" ]]; then
+  set -a
+  source "$legacy_config"
+  set +a
+fi
+
+export GEM_HOME="/opt/soundcloud9000"
+export GEM_PATH="/opt/soundcloud9000"
+
+exec /usr/bin/ruby \
+  -I"/opt/soundcloud9000/gems/soundcloud9000-0.2.0/lib" \
+  -rsoundcloud9000 \
+  -e 'Soundcloud9000.start' \
+  -- "$@"

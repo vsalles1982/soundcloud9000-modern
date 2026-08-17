@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SoundCloud9000
+GenericName=SoundCloud Terminal Player
+Comment=SoundCloud API v2 player for the terminal
+Exec=soundcloud9000
+Icon=soundcloud9000
+Terminal=true
+Categories=AudioVideo;Audio;Music;Player;
+Keywords=SoundCloud;Music;Audio;Terminal;TUI;
+StartupNotify=false

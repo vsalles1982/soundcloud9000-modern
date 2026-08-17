@@ -1,75 +1,56 @@
 .DS_Store
 debug.log
 
-# gitginore template for creating Snap packages
-# website: https://snapcraft.io/
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+.soundcloud9000.env
+/.config/
 
-parts/
-prime/
-stage/
-*.snap
-
-# Snapcraft global state tracking data(automatically generated)
-# https://forum.snapcraft.io/t/location-to-save-global-state/768
-/snap/.snapcraft/
-
-# Source archive packed by `snapcraft cleanbuild` before pushing to the LXD container
-/*_source.tar.bz2
-
+# Ruby
 *.gem
 *.rbc
-/.config
-/coverage/
-/InstalledFiles
-/pkg/
-/spec/reports/
-/spec/examples.txt
-/test/tmp/
-/test/version_tmp/
-/tmp/
-
-# Used by dotenv library to load environment variables.
-# .env
-
-# Ignore Byebug command history file.
+.bundle/
+vendor/bundle/
+lib/bundler/man/
+coverage/
+InstalledFiles
+pkg/
+spec/reports/
+spec/examples.txt
+test/tmp/
+test/version_tmp/
+.yardoc/
+_yardoc/
+doc/
+rdoc/
+.rvmrc
 .byebug_history
-
-## Specific to RubyMotion:
-.dat*
 .repl_history
+
+# Build output
 build/
+tmp/
 *.bridgesupport
 build-iPhoneOS/
 build-iPhoneSimulator/
 
-## Specific to RubyMotion (use of CocoaPods):
-#
-# We recommend against adding the Pods directory to your .gitignore. However
-# you should judge for yourself, the pros and cons are mentioned at:
-# https://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control
-#
-# vendor/Pods/
+# Arch Linux packaging output
+/packaging/arch/*.gem
+/packaging/arch/*.pkg.tar.zst
+/packaging/arch/*.pkg.tar.zst.sig
+/packaging/arch/debug.log
+/packaging/arch/pkg/
+/packaging/arch/src/
 
-## Documentation cache and generated files:
-/.yardoc/
-/_yardoc/
-/doc/
-/rdoc/
+# Snapcraft
+parts/
+prime/
+stage/
+*.snap
+/snap/.snapcraft/
+/*_source.tar.bz2
 
-## Environment normalization:
-/.bundle/
-/vendor/bundle
-/lib/bundler/man/
-
-# for a library or gem, you might want to ignore these files since the code is
-# intended to run in multiple environments; otherwise, check them in:
-# Gemfile.lock
-# .ruby-version
-# .ruby-gemset
-
-# unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
-.rvmrc
-
-# Used by RuboCop. Remote config files pulled in from inherit_from directive.
-# .rubocop-https?--*
-.soundcloud9000.env
+# RubyMotion
+.dat*
